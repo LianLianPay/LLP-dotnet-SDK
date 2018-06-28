@@ -38,115 +38,115 @@ Content-type: application/json;charset=utf-8
 首先生成签名原串， 如示例工程```App_Code```目录下```YinTongUtil.cs```的```genSignData()```方法:
 
 ```cs
-	// 生成签名原串
-	public static String genSignData(SortedDictionary<string, string> sParaTemp)
+// 生成签名原串
+public static String genSignData(SortedDictionary<string, string> sParaTemp)
+{
+	StringBuilder content = new StringBuilder();
+	foreach (KeyValuePair<string, string> temp in sParaTemp)
 	{
-		StringBuilder content = new StringBuilder();
-		foreach (KeyValuePair<string, string> temp in sParaTemp)
+		//"sign"不参与签名
+		if ("sign".Equals(temp.Key))
 		{
-			//"sign"不参与签名
-			if ("sign".Equals(temp.Key))
-			{
-				continue;
-			}
-			// 空串不参与签名
-			if (isnull(temp.Value))
-			{
-				continue;
-			}
-			content.Append("&" + temp.Key + "=" + temp.Value);
+			continue;
 		}
-		String signSrc = content.ToString();
-		if (signSrc.StartsWith("&"))
+		// 空串不参与签名
+		if (isnull(temp.Value))
 		{
-			signSrc = signSrc.Substring (1);
+			continue;
 		}
-		return signSrc;
+		content.Append("&" + temp.Key + "=" + temp.Value);
 	}
+	String signSrc = content.ToString();
+	if (signSrc.StartsWith("&"))
+	{
+		signSrc = signSrc.Substring (1);
+	}
+	return signSrc;
+}
 ```
 
 
 加签时，使用示例工程```App_Code```目录下```YinTongUtil.cs```的```addSignRSA()```方法进行加签，其中```rsa_private```即为您的私钥，```sign_src```为签名原串：
 
 ```cs
-	//RSA签名
-	private static String addSignRSA(SortedDictionary<string, string> sParaTemp, String rsa_private)
-	{
-		string oid_partner;
-		sParaTemp.TryGetValue ("sign_type", out oid_partner);
-		Console.WriteLine("进入商户[" + oid_partner + "]MD5加签名");
+//RSA签名
+private static String addSignRSA(SortedDictionary<string, string> sParaTemp, String rsa_private)
+{
+	string oid_partner;
+	sParaTemp.TryGetValue ("sign_type", out oid_partner);
+	Console.WriteLine("进入商户[" + oid_partner + "]MD5加签名");
 
-		if (sParaTemp == null)
-		{
-			return "";
-		}
-		// 生成签名原串
-		String sign_src = genSignData(sParaTemp);
-		Console.WriteLine("商户[" + oid_partner + "]加签原串"
-			+ sign_src);
-		Console.WriteLine("RSA签名key:" + rsa_private);
-		try
-		{
-			string sign = RSAFromPkcs8.sign(sign_src,rsa_private,"utf-8");
-			Console.WriteLine("商户[" + oid_partner + "]签名结果"
-				+ sign);
-			return sign;
-		} catch (Exception e)
-		{
-			Console.WriteLine("商户[" + oid_partner + "]RSA加签名异常" + e.Message);
-			return "";
-		}
+	if (sParaTemp == null)
+	{
+		return "";
 	}
+	// 生成签名原串
+	String sign_src = genSignData(sParaTemp);
+	Console.WriteLine("商户[" + oid_partner + "]加签原串"
+		+ sign_src);
+	Console.WriteLine("RSA签名key:" + rsa_private);
+	try
+	{
+		string sign = RSAFromPkcs8.sign(sign_src,rsa_private,"utf-8");
+		Console.WriteLine("商户[" + oid_partner + "]签名结果"
+			+ sign);
+		return sign;
+	} catch (Exception e)
+	{
+		Console.WriteLine("商户[" + oid_partner + "]RSA加签名异常" + e.Message);
+		return "";
+	}
+}
 ```
 
 验签时，使用示例工程```App_Code```目录下```YinTongUtil.cs```的```checkSignRSA()```方法进行验签，其中```sign```连连向您发送的请求报文中的签名值，```sign_src```为签名原串， ```rsa_public```为连连向您提供的公钥：
 
 ```cs
-	//RSA验签
-	private static bool checkSignRSA(SortedDictionary<string, string> sParaTemp, String rsa_public)
+//RSA验签
+private static bool checkSignRSA(SortedDictionary<string, string> sParaTemp, String rsa_public)
+{
+
+	string oid_partner;
+	sParaTemp.TryGetValue ("sign_type", out oid_partner);
+	Console.WriteLine("进入商户[" + oid_partner + "]MD5签名验证");
+
+	if (sParaTemp == null)
 	{
+		return false;
+	}
+	String sign;
+	if (!sParaTemp.TryGetValue ("sign", out sign))   
+	{
+		return false;
+	}
 
-		string oid_partner;
-		sParaTemp.TryGetValue ("sign_type", out oid_partner);
-		Console.WriteLine("进入商户[" + oid_partner + "]MD5签名验证");
+	// 生成签名原串
+	String sign_src = genSignData(sParaTemp);
 
-		if (sParaTemp == null)
-		{
-			return false;
-		}
-		String sign;
-		if (!sParaTemp.TryGetValue ("sign", out sign))   
-		{
-			return false;
-		}
-
-		// 生成签名原串
-		String sign_src = genSignData(sParaTemp);
-
-		Console.WriteLine("商户[" + oid_partner + "]待签名原串"
-			+ sign_src);
-		Console.WriteLine("商户[" + oid_partner + "]签名串"
-			+ sign);
-		try
-		{
-			if (RSAFromPkcs8.verify(sign_src,sign,rsa_public,"UTF-8" ))
-			{
-				Console.WriteLine("商户[" + oid_partner
-					+ "]RSA签名验证通过");
-				return true;
-			} else
-			{
-				Console.WriteLine("商户[" + oid_partner
-					+ "]RSA签名验证未通过");
-				return false;
-			}
-		} catch (Exception e)
+	Console.WriteLine("商户[" + oid_partner + "]待签名原串"
+		+ sign_src);
+	Console.WriteLine("商户[" + oid_partner + "]签名串"
+		+ sign);
+	try
+	{
+		if (RSAFromPkcs8.verify(sign_src,sign,rsa_public,"UTF-8" ))
 		{
 			Console.WriteLine("商户[" + oid_partner
-				+ "]RSA签名验证异常" + e.Message);
+				+ "]RSA签名验证通过");
+			return true;
+		} else
+		{
+			Console.WriteLine("商户[" + oid_partner
+				+ "]RSA签名验证未通过");
 			return false;
 		}
+	} catch (Exception e)
+	{
+		Console.WriteLine("商户[" + oid_partner
+			+ "]RSA签名验证异常" + e.Message);
+		return false;
 	}
+}
 ```
 
 ## 延伸阅读
