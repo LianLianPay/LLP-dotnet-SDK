@@ -151,6 +151,6 @@ private static bool checkSignRSA(SortedDictionary<string, string> sParaTemp, Str
 
 ## 延伸阅读
 
-[连连开放平台 - API文档 - 新手指南](https://open.lianlianpay-inc.com/apis/get-started)
+[连连开放平台 - API文档 - 新手指南](https://openllp.lianlianpay.com/apis/get-started)
 
-[连连开放平台 - 签名机制](https://open.lianlianpay-inc.com/docs/development/signature-overview)
+[连连开放平台 - 签名机制](https://openllp.lianlianpay.com/docs/development/signature-overview)
